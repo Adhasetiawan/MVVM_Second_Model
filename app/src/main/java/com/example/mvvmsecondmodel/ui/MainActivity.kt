@@ -3,6 +3,7 @@ package com.example.mvvmsecondmodel.ui
 import android.app.ProgressDialog
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.Toast
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.mvvmsecondmodel.R
@@ -26,34 +27,40 @@ class MainActivity : AppCompatActivity() {
 
         initrv()
 
+        val loading = ProgressDialog(this)
+        loading.setMessage("Memuat data...")
+
         vm.observerListMovie().observe(this, Observer {
-        when(it){
-           is Resource.Loading -> {
-               it.loadingData?.let { movies ->
-                   if (listmovie.isNotEmpty()) listmovie.clear()
-                   listmovie.addAll(movies)
-                   groupAdapter.notifyDataSetChanged()
+            when (it) {
+                is Resource.Loading -> {
+                    it.loadingData?.let { movies ->
+//                   if (listmovie.isNotEmpty()) listmovie.clear()
+                        loading.show()
 
-                   segaran.isRefreshing = false
-               }
-           }
-           is Resource.Success -> {
-               it.successData?.let { movies->
-                   if (listmovie.isNotEmpty()) listmovie.clear()
+                        segaran.isRefreshing = false
+                    }
+                }
+                is Resource.Success -> {
+                    it.successData?.let { movies ->
+                        if (listmovie.isNotEmpty()) listmovie.clear()
+                        loading.dismiss()
+                        groupAdapter.clear()
 
-                   movies.forEach {
-                       Timber.d("Berhasil"  + it.movie_id)
-                       groupAdapter.add(MovieItem(it))
-                   }
-                   listmovie.addAll(movies)
-                   groupAdapter.notifyDataSetChanged()
-                   segaran.isRefreshing = false
-               }
-           }
-           is Resource.Error -> {
-               Timber.e(it.msg)
-           }
-        }
+                        movies.forEach {
+                            Timber.d("Berhasil" + it.movie_id)
+                            groupAdapter.add(MovieItem(it))
+                        }
+//                   listmovie.addAll(movies)
+                        groupAdapter.notifyDataSetChanged()
+                        segaran.isRefreshing = false
+                    }
+                }
+                is Resource.Error -> {
+                    loading.dismiss()
+                    Toast.makeText(this, "Terjadi Kesalahan", Toast.LENGTH_SHORT).show()
+                    Timber.e(it.msg)
+                }
+            }
         })
         vm.getListMovie()
 
